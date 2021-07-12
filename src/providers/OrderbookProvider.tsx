@@ -8,7 +8,12 @@ interface OrderbookContextProps {
 
 const initialState: OrderbookState = {
   asks: {},
-  bids: {}
+  bids: {},
+  ticketSize: 0.5,
+  arrAsks: [],
+  arrBids: [],
+  totalAsk: 0,
+  totalBid: 0,
 }
 
 export const OrderbookContext = createContext({} as OrderbookContextProps)

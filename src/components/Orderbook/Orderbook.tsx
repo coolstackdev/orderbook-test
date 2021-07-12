@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
-import { useOrderbookState } from '../providers/OrderbookProvider';
+import { useOrderbookState } from '../../providers/OrderbookProvider';
+import TableHeader from './TableHeader'
 import OrderItem from './OrderItem';
+import TicketSelector from './TicketSelector';
+import { BookWrapper, BookHeader, BookContent } from './styled';
 
 export const Orderbook = () => {
   const { state, dispatch } = useOrderbookState();
@@ -11,6 +14,7 @@ export const Orderbook = () => {
   const [socketUrl] = useState(feedUrl);
   const [socketOpen, setSocketOpen] = useState<boolean>(true)
   const [isBtc, setIsBtc] = useState<boolean>(true)
+  const { innerWidth } = window;
 
   const {
     sendMessage,
@@ -35,7 +39,7 @@ export const Orderbook = () => {
         console.log('error')
       }
     }
-  }, [lastMessage])
+  }, [lastMessage, dispatch])
 
   // connection status
   const connectionStatus = {
@@ -65,6 +69,10 @@ export const Orderbook = () => {
 
   // const toggleConnection = () => setSocketOpen(!socketOpen)
 
+  // reverse bids array if mobile
+  let bidsArray = state.arrBids.slice()
+  if (innerWidth < 760) bidsArray = state.arrBids.slice().reverse()
+
   return (
     <div>
       <button
@@ -79,18 +87,48 @@ export const Orderbook = () => {
       </button>
       <br /><br />
       <span>The WebSocket is currently {connectionStatus}</span>
-      <br /><br />
-      { state.asks ? <span>Asks: {JSON.stringify(state.asks)}</span> : null}
-      <br/><br/>
-      { state.bids ? <span>Bids: {JSON.stringify(state.bids)}</span> : null}
-      <br/><br/>
-      {lastMessage ? <span>Message: {lastMessage.data}</span> : null}
-      <br />
-
   
-      <div className="order-book">
-
-      </div>
+      <BookWrapper>
+        <BookHeader>
+          <p>Order book</p>
+          <TicketSelector />
+        </BookHeader>
+        <BookContent>
+          <div>
+            <TableHeader isPriceFirst={innerWidth <= 760} />
+            {
+              bidsArray.map((bid, index) => (
+                <OrderItem
+                  key={`bid-item-${bid[0]}`}
+                  category='bid'
+                  price={bid[0]}
+                  size={bid[1]}
+                  total={bid[2]}
+                  totalSum={state.totalBid}
+                  isMobile={innerWidth <= 760}
+                />
+              ))
+            }
+          </div>
+          <div>
+            { innerWidth > 760 ? <TableHeader isPriceFirst={true} /> : <br /> }
+            {
+              state.arrAsks.map((ask, index) => (
+                <OrderItem
+                  key={`ask-item-${ask[0]}`}
+                  category='ask'
+                  price={ask[0]}
+                  size={ask[1]}
+                  total={ask[2]}
+                  totalSum={state.totalAsk}
+                  isMobile={innerWidth <= 760}
+                />
+              ))
+            }
+          </div>
+        </BookContent>
+      </BookWrapper>
+      <span>{lastMessage?.data}</span>
     </div>
   );
 };
